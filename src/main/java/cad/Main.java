@@ -37,6 +37,7 @@ public class Main {
     List<Integer> shuffle;
     // When pruning, allow solutions within this much of the current optimum.
     // TASing is a bit of a fuzzy magic sometimes.
+    // TODO: Accept this from graph input?
     static final int SOLUTION_THRESHOLD = 0;
 
     public void start(Scanner in) {
@@ -84,6 +85,9 @@ public class Main {
                 case 'M': // Match
                     int dest = Integer.parseInt(line[2]);
                     graph.addIsland(node, dest);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid restriction '" + type + "'");
             }
 
 
@@ -140,6 +144,8 @@ public class Main {
             }
 
             if (cur == N - 1) {
+                // TODO: Store these in a list instead of printing them as we go.
+                //   As is, it prints a bunch of suboptimal solutions just because it saw them first.
                 System.out.printf("FOUND ONE! score = %d\n", newTotal);
                 System.out.println(graph);
                 totalConsidered++;
