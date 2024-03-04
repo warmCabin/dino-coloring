@@ -27,11 +27,8 @@ public class Main {
 
     int N, C, R;
     DinoGraph graph;
-    // Seems like it's actually 2n - 1 when you use a gradient fill, so this approach isn't quite perfect. Hmm...
-    static int colorWeights[];
-    // Hardcoded to correspond to my CaD palette choice for now.
-    // static final String colorNames[] = {"Empty", "Pink", "Yellow", "Purple", "Gray"}; // BG and purple count
-    static final String colorNames[] = {"Empty", "Pink", "Yellow", "Gray", "Lavender"}; // BG and purple don't count
+    static int colorWeights[], colorConstants[];
+    static String colorNames[];
 
     // Jank from before I added "frozen" type restrictions.
     boolean forceBgBlank = false;
@@ -44,11 +41,15 @@ public class Main {
 
     public void start(Scanner in) {
 
-        String[] line = in.nextLine().split(" ");
-        C = Integer.parseInt(line[0]);
+        C = Integer.parseInt(in.nextLine());
         colorWeights = new int[C + 1];
+        colorConstants = new int[C + 1];
+        colorNames = new String[C + 1];
         for (int i = 1; i <= C; i++) {
-            colorWeights[i] = Integer.parseInt(line[i]);
+            String[] line = in.nextLine().split(" ");
+            colorNames[i] = line[0];
+            colorWeights[i] = Integer.parseInt(line[1]);
+            colorConstants[i] = Integer.parseInt(line[2]);
         }
 
         N = Integer.parseInt(in.nextLine());
@@ -72,7 +73,7 @@ public class Main {
         // TODO: Doesn't work with doShuffle.
         R = Integer.parseInt(in.nextLine());
         for (int i = 0; i < R; i++) {
-            line = in.nextLine().split(" ");
+            String[] line = in.nextLine().split(" ");
             char type = line[0].charAt(0);
             int node = Integer.parseInt(line[1]);
             switch (type) {
@@ -176,8 +177,7 @@ public class Main {
         }
 
         public int getMultipliedWeight(int i) {
-            return nodes[i].weight * colorWeights[nodes[i].color];
-            // TODO: weight * colorWeight - 1 ?
+            return nodes[i].getMultipliedWeight();
         }
 
         public void addEdge(int a, int b) {
@@ -251,11 +251,11 @@ public class Main {
             String ret = "DinoGraph(";
 
             ret += IntStream.range(0, N).boxed()
-                .map(i -> i + " " + nodes[i])
+                .map(i -> String.format("%2d %s", i, nodes[i]))
                 .collect(Collectors.joining(",\n  ", "nodes=[\n  ", "\n],\n"));
 
             ret += "weight=" + Arrays.stream(nodes)
-                .map(node -> node.weight * colorWeights[node.color])
+                .map(Node::getMultipliedWeight)
                 .reduce(0, Integer::sum);
 
             return ret + "\n)";
@@ -276,6 +276,10 @@ public class Main {
 
         public Node(int weight) {
             this.weight = weight;
+        }
+
+        public int getMultipliedWeight() {
+            return weight * colorWeights[color] + colorConstants[color];
         }
 
         @Override
