@@ -96,7 +96,12 @@ public class Main {
 
         }
 
-        long time;
+        long time = -System.currentTimeMillis();
+        boolean planar = new PlanarityChecka(graph).isPlanar();
+        time += System.currentTimeMillis();
+        System.out.println("Planar? " + planar);
+        System.out.printf("(Planarity time: %d ms)\n", time);
+
         if (forceBgBlank) {
             // Set the color and start the recursion at node 1.
             // This can be used as an optimization for normal four coloring, but isn't applicable to dinosaur coloring.
@@ -303,6 +308,14 @@ public class Main {
                 .collect(Collectors.joining("\n  ", "bycolor:\n  ", ""));
 
             return ret + "\n)";
+        }
+
+        public int size() {
+            return N;
+        }
+
+        public Node getNode(int i) {
+            return nodes[i];
         }
 
     }
