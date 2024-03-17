@@ -5,7 +5,9 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -83,6 +85,7 @@ public class Main {
                     graph.freezeColor(node, value);
                     break;
                 case 'M': // Match
+                    // Now that I think about this, this is the same thing as just contracting the vertices...
                     int dest = Integer.parseInt(line[2]);
                     graph.addIsland(node, dest);
                     break;
@@ -93,6 +96,7 @@ public class Main {
 
         }
 
+        long time;
         if (forceBgBlank) {
             // Set the color and start the recursion at node 1.
             // This can be used as an optimization for normal four coloring, but isn't applicable to dinosaur coloring.
@@ -101,7 +105,10 @@ public class Main {
             generateAllColorings(1, 0);
         } else {
             // Normal recursion allowing for all possibilities in node 0.
+            time = -System.currentTimeMillis();
             generateAllColorings(0, 0);
+            time += System.currentTimeMillis();
+            System.out.printf("(Algo time: %d ms)\n", time);
         }
 
         if (totalConsidered == 0) {
@@ -109,11 +116,25 @@ public class Main {
         } else {
             System.out.printf("\nbest score = %d\n", minScore);
             System.out.println("Total considered: " + totalConsidered);
+            time = -System.currentTimeMillis();
+            colorings.removeIf(graph -> graph.getTotalWeight() > minScore + SOLUTION_THRESHOLD);
+            colorings.sort(Comparator.comparing(DinoGraph::getTotalWeight).reversed());
+            time += System.currentTimeMillis();
+
+            System.out.printf("(sort time: %d ms)\n", time);
+
+            System.out.println("Total in range: " + colorings.size());
+            System.out.println();
+            for (int i = 0; i < colorings.size(); i++) {
+                System.out.printf("= Solution #%d =\n%d frames\n", i + 1, colorings.get(i).getTotalWeight());
+                System.out.println(colorings.get(i) + "\n");
+            }
         }
     }
 
     int minScore = Integer.MAX_VALUE - SOLUTION_THRESHOLD - 1;
     int totalConsidered = 0;
+    List<DinoGraph> colorings = new ArrayList<>();
 
     /**
      * An approach borrowed from https://math.stackexchange.com/questions/120531/how-to-find-all-proper-colorings-four-coloring-of-a-graph-with-a-brute-force-a.
@@ -144,10 +165,8 @@ public class Main {
             }
 
             if (cur == N - 1) {
-                // TODO: Store these in a list instead of printing them as we go.
-                //   As is, it prints a bunch of suboptimal solutions just because it saw them first.
-                System.out.printf("FOUND ONE! score = %d\n", newTotal);
-                System.out.println(graph);
+                // FOUND ONE! Save a copy of the current graph state to the list of colorings.
+                colorings.add(new DinoGraph(graph));
                 totalConsidered++;
                 minScore = Math.min(minScore, newTotal);
             } else {
@@ -175,6 +194,18 @@ public class Main {
             nodes = new Node[N];
             for (int i = 0; i < N; i++) {
                 nodes[i] = new Node();
+            }
+        }
+
+        /**
+         * Copy constructor
+         */
+        public DinoGraph(DinoGraph original) {
+            this.N = original.N;
+            this.nodes = new Node[N];
+
+            for (int i = 0; i < N; i++) {
+                this.nodes[i] = new Node(original.nodes[i]);
             }
         }
 
@@ -282,6 +313,15 @@ public class Main {
 
         public Node(int weight) {
             this.weight = weight;
+        }
+
+        // copy constructor
+        public Node(Node original) {
+            this.weight = original.weight;
+            this.color = original.color;
+            this.frozen = original.frozen;
+            this.edges.addAll(original.edges);
+            this.islands.addAll(original.islands);
         }
 
         public int getMultipliedWeight() {
