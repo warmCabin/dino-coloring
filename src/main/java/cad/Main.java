@@ -293,7 +293,14 @@ public class Main {
 
             ret += "weight=" + Arrays.stream(nodes)
                 .map(Node::getMultipliedWeight)
-                .reduce(0, Integer::sum);
+                .reduce(0, Integer::sum) + ",\n";
+
+            Map<Integer, List<Integer>> nodesByColor = IntStream.range(0, N).boxed()
+                .collect(Collectors.groupingBy(this::getColor));
+
+            ret += IntStream.range(1, colorNames.length)
+                .mapToObj(color -> colorNames[color] + ": " + nodesByColor.get(color))
+                .collect(Collectors.joining("\n  ", "bycolor:\n  ", ""));
 
             return ret + "\n)";
         }
