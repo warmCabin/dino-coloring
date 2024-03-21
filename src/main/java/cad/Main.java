@@ -96,11 +96,27 @@ public class Main {
 
         }
 
+        // Checking planarity just because it's interesting and fast.
+        // I don't fully understand the big boy computer science going on inside this method.
         long time = -System.currentTimeMillis();
         boolean planar = new PlanarityChecka(graph).isPlanar();
         time += System.currentTimeMillis();
         System.out.println("Planar? " + planar);
         System.out.printf("(Planarity time: %d ms)\n", time);
+
+        // The main recursion may churn for a long time before it realizes there are no valid colorings.
+        // This checka can quickly tell us that from the get go.
+        // I DO fully understand the big boy computer science going on inside THIS method!
+        time = -System.currentTimeMillis();
+        int chromaticNumber = new PlanarityChecka(graph).chromaticNumba();
+        time += System.currentTimeMillis();
+        System.out.println("chromaticity: " + chromaticNumber);
+        System.out.printf("(chromaticity time: %d ms)\n", time);
+
+        if (chromaticNumber > C) {
+            throw new IllegalArgumentException(String.format("Invalid dinosaur; %d colors defined, %d required.",
+                C, chromaticNumber));
+        }
 
         if (forceBgBlank) {
             // Set the color and start the recursion at node 1.
@@ -189,7 +205,7 @@ public class Main {
         return list;
     }
 
-    static class DinoGraph {
+    public static class DinoGraph {
 
         private final int N;
         private final Node[] nodes;
@@ -199,6 +215,7 @@ public class Main {
             nodes = new Node[N];
             for (int i = 0; i < N; i++) {
                 nodes[i] = new Node();
+                nodes[i].index = i;
             }
         }
 
@@ -296,9 +313,7 @@ public class Main {
                 .map(i -> String.format("%2d %s", i, nodes[i]))
                 .collect(Collectors.joining(",\n  ", "nodes=[\n  ", "\n],\n"));
 
-            ret += "weight=" + Arrays.stream(nodes)
-                .map(Node::getMultipliedWeight)
-                .reduce(0, Integer::sum) + ",\n";
+            ret += "weight=" + getTotalWeight() + ",\n";
 
             Map<Integer, List<Integer>> nodesByColor = IntStream.range(0, N).boxed()
                 .collect(Collectors.groupingBy(this::getColor));
@@ -320,9 +335,10 @@ public class Main {
 
     }
 
-    static class Node {
+    public static class Node {
         public int weight;
         public int color;
+        public int index;
         public boolean frozen;
         public List<Integer> edges = new ArrayList<>();
         public List<Integer> islands = new ArrayList<>();
@@ -339,6 +355,7 @@ public class Main {
         public Node(Node original) {
             this.weight = original.weight;
             this.color = original.color;
+            this.index = original.index;
             this.frozen = original.frozen;
             this.edges.addAll(original.edges);
             this.islands.addAll(original.islands);
@@ -350,8 +367,8 @@ public class Main {
 
         @Override
         public String toString() {
-//            return String.format("Node(%d(%s), %d)", color, colorNames[color], colorWeights[color] * weight);
-            return colorNames[color];
+            return String.format("Node{i=%d, color=%d(%s), multipliedWeight=%d}", index, color, colorNames[color], getMultipliedWeight());
+//            return colorNames[color];
         }
     }
 

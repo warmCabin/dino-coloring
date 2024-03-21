@@ -3,6 +3,10 @@ package cad;
 import cad.Main.DinoGraph;
 import cad.Main.Node;
 import org.jgrapht.Graph;
+import org.jgrapht.alg.color.BrownBacktrackColoring;
+import org.jgrapht.alg.drawing.FRLayoutAlgorithm2D;
+import org.jgrapht.alg.drawing.model.Box2D;
+import org.jgrapht.alg.drawing.model.MapLayoutModel2D;
 import org.jgrapht.alg.interfaces.PlanarityTestingAlgorithm;
 import org.jgrapht.alg.planar.BoyerMyrvoldPlanarityInspector;
 import org.jgrapht.graph.DefaultEdge;
@@ -23,7 +27,8 @@ import org.jgrapht.graph.DefaultUndirectedGraph;
 public class PlanarityChecka {
 
     private final Graph<Node, DefaultEdge> graph;
-    private final PlanarityTestingAlgorithm<Node, DefaultEdge> testa;
+    private final PlanarityTestingAlgorithm<Node, DefaultEdge> planarityTesta;
+    private final BrownBacktrackColoring<Node, DefaultEdge> colorTesta;
 
     public PlanarityChecka(DinoGraph dinoGraph) {
         graph = new DefaultUndirectedGraph<>(DefaultEdge.class);
@@ -38,11 +43,38 @@ public class PlanarityChecka {
             }
         }
 
-        this.testa = new BoyerMyrvoldPlanarityInspector<>(this.graph);
+        planarityTesta = new BoyerMyrvoldPlanarityInspector<>(graph);
+        colorTesta = new BrownBacktrackColoring<>(graph);
     }
 
     public boolean isPlanar() {
-        return testa.isPlanar();
+//        if (!planarityTesta.isPlanar()) {
+            // The Kuratowski subdivision is the kernel of nonplanarity that the testa found;
+            // described as a "certificate" in the Javadocs. But you already knew that because you've
+            // cloned this onto your computer and imported it into an IDE so you can use keyboard shortcuts
+            // to read all the docs... right?
+//            displayGraph(planarityTesta.getKuratowskiSubdivision());
+//        }
+        return planarityTesta.isPlanar();
+    }
+
+    // Just playing around with the LayoutModel stuff. I'll need another library to actually display anything--
+    // or just write it myself.
+    private void displayGraph(Graph<Node, DefaultEdge> graph) {
+        var layoutModel = new MapLayoutModel2D<Node>(new Box2D(600, 400));
+        new FRLayoutAlgorithm2D<Node, DefaultEdge>().layout(graph, layoutModel);
+        System.out.println("Node draw coords: ");
+        for (var entry : layoutModel) {
+            System.out.println("  " + entry);
+        }
+        System.out.println("Edges: ");
+        for (var e : graph.edgeSet()) {
+            System.out.println("  " + e);
+        }
+    }
+
+    public int chromaticNumba() {
+        return colorTesta.getChromaticNumber();
     }
 
 }
