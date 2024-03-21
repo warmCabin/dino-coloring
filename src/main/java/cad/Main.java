@@ -1,10 +1,14 @@
 package cad;
 
+import cad.iter.DegreeBasedIterationOrder;
+import cad.iter.IterationOrder;
+import cad.iter.ShuffledIterationOrder;
+import cad.iter.SimpleIterationOrder;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -16,15 +20,42 @@ import java.util.stream.IntStream;
 public class Main {
 
     public static void main(String[] args) throws FileNotFoundException {
-        Scanner in;
-        if (args.length > 0) {
-            System.out.printf("Opening %s...\n\n", args[0]);
-            in = new Scanner(new File(args[0]));
-        } else {
+        Scanner in = null;
+        String iterationScheme = null;
+
+        for (int i = 0; i < args.length; i++) {
+            if (args[i].equals("-i")) {
+                if (iterationScheme != null)
+                    throw new IllegalArgumentException("Only one -i option allowed");
+                if (i == args.length - 1)
+                    throw new IllegalArgumentException("No value supplied to -i option");
+                switch (args[++i].toLowerCase()) {
+                    case "simple":
+                    case "shuffle":
+                    case "degree":
+                        iterationScheme = args[i];
+                        System.out.println("Iteration scheme selected: " + iterationScheme + "\n");
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unrecognized iteration scheme \"" + args[i] + "\"");
+                }
+            } else {
+                if (in != null)
+                    throw new IllegalArgumentException("Multiple filepath arguments supplied");
+                System.out.printf("Opening %s...\n\n", args[i]);
+                in = new Scanner(new File(args[i]));
+            }
+        }
+
+        if (in == null) {
             System.out.println("Reading from stdin...\n");
             in = new Scanner(System.in);
         }
-        new Main().start(in);
+        if (iterationScheme == null) {
+            iterationScheme = "degree";
+        }
+
+        new Main().start(in, iterationScheme);
     }
 
     int N, C, R;
@@ -34,15 +65,12 @@ public class Main {
 
     // Jank from before I added "frozen" type restrictions.
     boolean forceBgBlank = false;
-    // TODO: Flesh these out into a proper IterationOrder scheme thing.
-    boolean doShuffle = false;
-    List<Integer> shuffle;
     // When pruning, allow solutions within this much of the current optimum.
     // TASing is a bit of a fuzzy magic sometimes.
     // TODO: Accept this from graph input?
     static final int SOLUTION_THRESHOLD = 0;
 
-    public void start(Scanner in) {
+    public void start(Scanner in, String iterationScheme) {
 
         C = Integer.parseInt(in.nextLine());
         colorWeights = new int[C + 1];
@@ -57,23 +85,18 @@ public class Main {
 
         N = Integer.parseInt(in.nextLine());
         graph = new DinoGraph(N);
-        shuffle = generateRandomPermutation(N);
         for (int i = 0; i < N; i++) {
             String[] nodeLine = in.nextLine().split(" ");
             int cur = Integer.parseInt(nodeLine[0]);
-            if (doShuffle)
-                cur = shuffle.get(cur);
             int weight = Integer.parseInt(nodeLine[1]);
             graph.setWeight(cur, weight);
 
-            int finalCur = cur; // fu java
             Arrays.stream(nodeLine)
                 .skip(2)
                 .map(Integer::parseInt)
-                .forEach(dest -> graph.addEdge(finalCur, doShuffle ? shuffle.get(dest) : dest));
+                .forEach(dest -> graph.addEdge(cur, dest));
         }
 
-        // TODO: Doesn't work with doShuffle.
         R = Integer.parseInt(in.nextLine());
         for (int i = 0; i < R; i++) {
             String[] line = in.nextLine().split(" ");
@@ -86,14 +109,14 @@ public class Main {
                     break;
                 case 'M': // Match
                     // Now that I think about this, this is the same thing as just contracting the vertices...
+                    if (!iterationScheme.equals("simple"))
+                        throw new UnsupportedOperationException("Can't have islands with weird iteration orders for now...");
                     int dest = Integer.parseInt(line[2]);
                     graph.addIsland(node, dest);
                     break;
                 default:
                     throw new IllegalArgumentException("Invalid restriction '" + type + "'");
             }
-
-
         }
 
         // Checking planarity just because it's interesting and fast.
@@ -116,6 +139,17 @@ public class Main {
         if (chromaticNumber > C) {
             throw new IllegalArgumentException(String.format("Invalid dinosaur; %d colors defined, %d required.",
                 C, chromaticNumber));
+        }
+
+        switch (iterationScheme) {
+            case "simple":
+                iterationOrder = new SimpleIterationOrder();
+                break;
+            case "shuffle":
+                iterationOrder = new ShuffledIterationOrder(N);
+                break;
+            case "degree":
+                iterationOrder = new DegreeBasedIterationOrder(graph);
         }
 
         if (forceBgBlank) {
@@ -156,20 +190,22 @@ public class Main {
     int minScore = Integer.MAX_VALUE - SOLUTION_THRESHOLD - 1;
     int totalConsidered = 0;
     List<DinoGraph> colorings = new ArrayList<>();
+    IterationOrder iterationOrder;
 
     /**
-     * An approach borrowed from https://math.stackexchange.com/questions/120531/how-to-find-all-proper-colorings-four-coloring-of-a-graph-with-a-brute-force-a.
+     * An approach borrowed from <a href="https://math.stackexchange.com/questions/120531/how-to-find-all-proper-colorings-four-coloring-of-a-graph-with-a-brute-force-a">StackExchange</a>.
      * I promise I'll give it back!
-     * <p/>
+     * <p>
      * Iterates through all possible colorings, keeping track of the weight along the way. Prunes if the running total
      * exceeds the known minimum. Returns values in minScore and totalConsidered. Hello, 80's!
-     * <p/>
+     * <p>
      * You generally want to call this like generateAllColorings(0, 0).
      *
-     * @param cur the current node
+     * @param index current index into the selected iteration order.
      * @param runningTotal running total of the coloring weight so far.
      */
-    void generateAllColorings(int cur, int runningTotal) {
+    void generateAllColorings(int index, int runningTotal) {
+        int cur = iterationOrder.get(index);
         for (int color = 1; color <= C; color++) {
             if (!graph.canColor(cur, color))
                 continue;
@@ -185,24 +221,16 @@ public class Main {
                 continue;
             }
 
-            if (cur == N - 1) {
+            if (index == N - 1) {
                 // FOUND ONE! Save a copy of the current graph state to the list of colorings.
                 colorings.add(new DinoGraph(graph));
                 totalConsidered++;
                 minScore = Math.min(minScore, newTotal);
             } else {
-                generateAllColorings(cur + 1, runningTotal + graph.getMultipliedWeight(cur));
+                generateAllColorings(index + 1, runningTotal + graph.getMultipliedWeight(cur));
             }
             graph.resetColor(cur);
         }
-    }
-
-    List<Integer> generateRandomPermutation(int n) {
-        List<Integer> list = IntStream.range(0, n).boxed()
-            .collect(Collectors.toList());
-
-        Collections.shuffle(list);
-        return list;
     }
 
     public static class DinoGraph {
