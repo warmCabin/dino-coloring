@@ -107,7 +107,7 @@ public class Main {
                     break;
                 case 'M': // Match
                     // Now that I think about this, this is the same thing as just contracting the vertices...
-                    if (!iterationScheme.equals("simple"))
+                    if (iterationScheme != IterationScheme.SIMPLE)
                         throw new UnsupportedOperationException("Can't have islands with weird iteration orders for now...");
                     int dest = Integer.parseInt(line[2]);
                     graph.addIsland(node, dest);
