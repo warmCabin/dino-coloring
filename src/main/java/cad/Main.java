@@ -2,6 +2,7 @@ package cad;
 
 import cad.iter.DegreeBasedIterationOrder;
 import cad.iter.IterationOrder;
+import cad.iter.IterationOrder.IterationScheme;
 import cad.iter.ShuffledIterationOrder;
 import cad.iter.SimpleIterationOrder;
 import cad.iter.WeightBasedIterationOrder;
@@ -22,7 +23,7 @@ public class Main {
 
     public static void main(String[] args) throws FileNotFoundException {
         Scanner in = null;
-        String iterationScheme = null;
+        IterationScheme iterationScheme = null;
 
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("-i")) {
@@ -30,16 +31,11 @@ public class Main {
                     throw new IllegalArgumentException("Only one -i option allowed");
                 if (i == args.length - 1)
                     throw new IllegalArgumentException("No value supplied to -i option");
-                switch (args[++i].toLowerCase()) {
-                    case "simple":
-                    case "shuffle":
-                    case "degree":
-                    case "weight":
-                        iterationScheme = args[i];
-                        System.out.println("Iteration scheme selected: " + iterationScheme + "\n");
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unrecognized iteration scheme \"" + args[i] + "\"");
+                try {
+                    iterationScheme = IterationScheme.valueOf(args[++i].toUpperCase());
+                    System.out.println("Iteration scheme selected: " + iterationScheme);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Unrecognized iteration scheme \"" + args[i] + "\"");
                 }
             } else {
                 if (in != null)
@@ -54,7 +50,7 @@ public class Main {
             in = new Scanner(System.in);
         }
         if (iterationScheme == null) {
-            iterationScheme = "degree";
+            iterationScheme = IterationScheme.DEGREE;
         }
 
         new Main().start(in, iterationScheme);
@@ -72,7 +68,7 @@ public class Main {
     // TODO: Accept this from graph input?
     static final int SOLUTION_THRESHOLD = 0;
 
-    public void start(Scanner in, String iterationScheme) {
+    public void start(Scanner in, IterationScheme iterationScheme) {
 
         C = Integer.parseInt(in.nextLine());
         colorWeights = new int[C + 1];
@@ -144,16 +140,16 @@ public class Main {
         }
 
         switch (iterationScheme) {
-            case "simple":
+            case SIMPLE:
                 iterationOrder = new SimpleIterationOrder();
                 break;
-            case "shuffle":
+            case SHUFFLE:
                 iterationOrder = new ShuffledIterationOrder(N);
                 break;
-            case "degree":
+            case DEGREE:
                 iterationOrder = new DegreeBasedIterationOrder(graph);
                 break;
-            case "weight":
+            case WEIGHT:
                 iterationOrder = new WeightBasedIterationOrder(graph);
         }
 
