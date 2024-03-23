@@ -4,6 +4,7 @@ import cad.iter.DegreeBasedIterationOrder;
 import cad.iter.IterationOrder;
 import cad.iter.ShuffledIterationOrder;
 import cad.iter.SimpleIterationOrder;
+import cad.iter.WeightBasedIterationOrder;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -33,6 +34,7 @@ public class Main {
                     case "simple":
                     case "shuffle":
                     case "degree":
+                    case "weight":
                         iterationScheme = args[i];
                         System.out.println("Iteration scheme selected: " + iterationScheme + "\n");
                         break;
@@ -150,6 +152,9 @@ public class Main {
                 break;
             case "degree":
                 iterationOrder = new DegreeBasedIterationOrder(graph);
+                break;
+            case "weight":
+                iterationOrder = new WeightBasedIterationOrder(graph);
         }
 
         if (forceBgBlank) {
