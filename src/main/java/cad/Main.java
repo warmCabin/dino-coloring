@@ -24,6 +24,7 @@ public class Main {
     public static void main(String[] args) throws FileNotFoundException {
         Scanner in = null;
         IterationScheme iterationScheme = null;
+        Integer threshold = null;
 
         for (int i = 0; i < args.length; i++) {
             if (args[i].equals("-i")) {
@@ -36,6 +37,17 @@ public class Main {
                     System.out.println("Iteration scheme selected: " + iterationScheme);
                 } catch (IllegalArgumentException e) {
                     throw new IllegalArgumentException("Unrecognized iteration scheme \"" + args[i] + "\"");
+                }
+            } else if (args[i].equals("-t")) {
+                if (threshold != null)
+                    throw new IllegalArgumentException("Only one -t option allowed");
+                if (i == args.length - 1)
+                    throw new IllegalArgumentException("No value supplied to -t option");
+                try {
+                    threshold = Integer.parseInt(args[++i]);
+                    System.out.println("Solution threshold: " + threshold);
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException("Invalid -t option: must be integer");
                 }
             } else {
                 if (in != null)
@@ -52,8 +64,11 @@ public class Main {
         if (iterationScheme == null) {
             iterationScheme = IterationScheme.DEGREE;
         }
+        if (threshold == null) {
+            threshold = 0;
+        }
 
-        new Main().start(in, iterationScheme);
+        new Main().start(in, iterationScheme, threshold);
     }
 
     int N, C, R;
@@ -63,10 +78,9 @@ public class Main {
 
     // When pruning, allow solutions within this much of the current optimum.
     // TASing is a bit of a fuzzy magic sometimes.
-    // TODO: Accept this from graph input?
-    static final int SOLUTION_THRESHOLD = 0;
+    private int solutionThreshold;
 
-    public void start(Scanner in, IterationScheme iterationScheme) {
+    public void start(Scanner in, IterationScheme iterationScheme, int threshold) {
 
         C = Integer.parseInt(in.nextLine());
         colorWeights = new int[C + 1];
@@ -151,6 +165,9 @@ public class Main {
                 iterationOrder = new WeightBasedIterationOrder(graph);
         }
 
+        solutionThreshold = threshold;
+        minScore = Integer.MAX_VALUE - solutionThreshold - 1;
+
         // This is what it's all about, baby!
         time = -System.currentTimeMillis();
         generateAllColorings(0, 0);
@@ -163,7 +180,7 @@ public class Main {
             System.out.printf("\nbest score = %d\n", minScore);
             System.out.println("Total considered: " + totalConsidered);
             time = -System.currentTimeMillis();
-            colorings.removeIf(graph -> graph.getTotalWeight() > minScore + SOLUTION_THRESHOLD);
+            colorings.removeIf(graph -> graph.getTotalWeight() > minScore + solutionThreshold);
             colorings.sort(Comparator.comparing(DinoGraph::getTotalWeight).reversed());
             time += System.currentTimeMillis();
 
@@ -178,7 +195,7 @@ public class Main {
         }
     }
 
-    int minScore = Integer.MAX_VALUE - SOLUTION_THRESHOLD - 1;
+    int minScore;
     int totalConsidered = 0;
     List<DinoGraph> colorings = new ArrayList<>();
     IterationOrder iterationOrder;
@@ -204,7 +221,7 @@ public class Main {
             graph.setColor(cur, color);
             int newTotal = runningTotal + graph.getMultipliedWeight(cur);
 
-            if (newTotal > minScore + SOLUTION_THRESHOLD) {
+            if (newTotal > minScore + solutionThreshold) {
                 // It's annoying that I have to set and reset the color to get newTotal.
                 // ...I say that as if it's not totally within my control to not do that.
                 graph.resetColor(cur);
