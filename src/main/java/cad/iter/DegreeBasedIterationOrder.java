@@ -1,6 +1,7 @@
 package cad.iter;
 
 import cad.Main;
+import cad.Main.DinoGraph;
 
 import java.util.Comparator;
 import java.util.List;
@@ -11,7 +12,7 @@ public class DegreeBasedIterationOrder implements IterationOrder {
 
     private final List<Integer> canonicalOrder;
 
-    public DegreeBasedIterationOrder(Main.DinoGraph graph) {
+    public DegreeBasedIterationOrder(DinoGraph graph) {
         canonicalOrder = IntStream.range(0, graph.size()).boxed()
             .sorted(Comparator.comparing((Integer i) -> graph.getNode(i).edges.size()).reversed())
             .collect(Collectors.toList());
