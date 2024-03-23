@@ -1,6 +1,5 @@
 package cad.iter;
 
-import cad.Main;
 import cad.Main.DinoGraph;
 
 import java.util.Comparator;

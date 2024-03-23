@@ -61,8 +61,6 @@ public class Main {
     static int colorWeights[], colorConstants[];
     static String colorNames[];
 
-    // Jank from before I added "frozen" type restrictions.
-    boolean forceBgBlank = false;
     // When pruning, allow solutions within this much of the current optimum.
     // TASing is a bit of a fuzzy magic sometimes.
     // TODO: Accept this from graph input?
@@ -153,19 +151,11 @@ public class Main {
                 iterationOrder = new WeightBasedIterationOrder(graph);
         }
 
-        if (forceBgBlank) {
-            // Set the color and start the recursion at node 1.
-            // This can be used as an optimization for normal four coloring, but isn't applicable to dinosaur coloring.
-            // TODO: Can just use an F 0 3 constraint in the data.
-            graph.setColor(0, 3);
-            generateAllColorings(1, 0);
-        } else {
-            // Normal recursion allowing for all possibilities in node 0.
-            time = -System.currentTimeMillis();
-            generateAllColorings(0, 0);
-            time += System.currentTimeMillis();
-            System.out.printf("(Algo time: %d ms)\n", time);
-        }
+        // This is what it's all about, baby!
+        time = -System.currentTimeMillis();
+        generateAllColorings(0, 0);
+        time += System.currentTimeMillis();
+        System.out.printf("(Algo time: %d ms)\n", time);
 
         if (totalConsidered == 0) {
             System.out.println("\nNo valid colorings!!!");
@@ -214,7 +204,6 @@ public class Main {
             graph.setColor(cur, color);
             int newTotal = runningTotal + graph.getMultipliedWeight(cur);
 
-            // condense this all into one big elseif chain?
             if (newTotal > minScore + SOLUTION_THRESHOLD) {
                 // It's annoying that I have to set and reset the color to get newTotal.
                 // ...I say that as if it's not totally within my control to not do that.
