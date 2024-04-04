@@ -115,7 +115,7 @@ public class Main {
             int node = Integer.parseInt(line[1]);
             switch (type) {
                 case 'F': // Freeze
-                    int value = Integer.parseInt(line[2]);
+                    int value = parseColor(line[2]);
                     graph.freezeColor(node, value);
                     break;
                 case 'M': // Match
@@ -198,6 +198,21 @@ public class Main {
                 System.out.println(colorings.get(i) + "\n");
             }
         }
+    }
+
+    private int parseColor(String str) {
+        int color;
+        try {
+            color = Integer.parseInt(str);
+        } catch (NumberFormatException e) {
+            color = IntStream.range(1, C)
+                .filter(c -> colorNames[c].equalsIgnoreCase(str))
+                .findFirst().orElse(-1);
+        }
+        if (color < 0 || color >= C)
+            throw new IllegalArgumentException("Invalid color \"" + str + "\"");
+
+        return color;
     }
 
     int minScore;
