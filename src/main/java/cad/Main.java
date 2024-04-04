@@ -209,7 +209,7 @@ public class Main {
                 .filter(c -> colorNames[c].equalsIgnoreCase(str))
                 .findFirst().orElse(-1);
         }
-        if (color < 0 || color >= C)
+        if (color <= 0 || color >= C)
             throw new IllegalArgumentException("Invalid color \"" + str + "\"");
 
         return color;
