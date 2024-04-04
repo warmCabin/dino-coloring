@@ -13,7 +13,8 @@ public class DegreeBasedIterationOrder implements IterationOrder {
 
     public DegreeBasedIterationOrder(DinoGraph graph) {
         canonicalOrder = IntStream.range(0, graph.size()).boxed()
-            .sorted(Comparator.comparing((Integer i) -> graph.getNode(i).edges.size()).reversed())
+            .sorted(Comparator.comparing(graph::isFrozen).reversed()
+                .thenComparing(Comparator.comparing((Integer i) -> graph.getNode(i).edges.size()).reversed()))
             .collect(Collectors.toList());
     }
 
