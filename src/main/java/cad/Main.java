@@ -27,7 +27,7 @@ public class Main {
         Integer threshold = null;
 
         for (int i = 0; i < args.length; i++) {
-            if (args[i].equals("-i")) {
+            if (args[i].equals("-i")) { // -v for vertex ordering?
                 if (iterationScheme != null)
                     throw new IllegalArgumentException("Only one -i option allowed");
                 if (i == args.length - 1)
@@ -39,6 +39,7 @@ public class Main {
                     throw new IllegalArgumentException("Unrecognized iteration scheme \"" + args[i] + "\"");
                 }
             } else if (args[i].equals("-t")) {
+                // "Don't Repeat Yourself" proponents when I repeat myself >:0 (they are very irritated)
                 if (threshold != null)
                     throw new IllegalArgumentException("Only one -t option allowed");
                 if (i == args.length - 1)
@@ -186,10 +187,14 @@ public class Main {
 
             System.out.printf("(sort time: %d ms)\n", time);
 
-            System.out.println("Total in range: " + colorings.size());
-            System.out.println();
+            System.out.println("\n= Total in range: " + colorings.size() + " =\n");
             for (int i = 0; i < colorings.size(); i++) {
-                System.out.printf("= Solution #%d =\n%d frames\n", i + 1, colorings.get(i).getTotalWeight());
+                int w = colorings.get(i).getTotalWeight();
+                System.out.printf("= Solution #%d =\n%d frames", i + 1, w);
+                if (w == minScore)
+                    System.out.println(" (optimal)");
+                else
+                    System.out.printf(" (%d frames from optimum)\n", w - minScore);
                 System.out.println(colorings.get(i) + "\n");
             }
         }
