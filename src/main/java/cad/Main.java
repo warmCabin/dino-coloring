@@ -205,11 +205,11 @@ public class Main {
         try {
             color = Integer.parseInt(str);
         } catch (NumberFormatException e) {
-            color = IntStream.range(1, C)
+            color = IntStream.rangeClosed(1, C)
                 .filter(c -> colorNames[c].equalsIgnoreCase(str))
                 .findFirst().orElse(-1);
         }
-        if (color <= 0 || color >= C)
+        if (color <= 0 || color > C)
             throw new IllegalArgumentException("Invalid color \"" + str + "\"");
 
         return color;
