@@ -12,9 +12,11 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -114,9 +116,11 @@ public class Main {
             char type = line[0].charAt(0);
             int node = Integer.parseInt(line[1]);
             switch (type) {
-                case 'F': // Freeze
-                    int value = parseColor(line[2]);
-                    graph.freezeColor(node, value);
+                case 'F': // Freeze. Maybe do R for restrictions?
+                    for (int f = 2; f < line.length; f++) {
+                        int freezy = parseColor(line[f]);
+                        graph.addFreeze(node, freezy);
+                    }
                     break;
                 case 'M': // Match
                     // Now that I think about this, this is the same thing as just contracting the vertices...
@@ -319,7 +323,7 @@ public class Main {
         public void setColor(int i, int color) {
             nodes[i].color = color;
             for (int dest : nodes[i].islands) {
-                freezeColor(dest, color);
+                addFreeze(dest, color);
             }
         }
 
@@ -328,13 +332,13 @@ public class Main {
                 return;
             setColor(i, 0);
             for (int dest : nodes[i].islands) {
-                nodes[dest].color = 0;
+                nodes[dest].freezies.clear();
             }
         }
 
-        public void freezeColor(int i, int color) {
-            setColor(i, color);
+        public void addFreeze(int i, int color) {
             nodes[i].frozen = true;
+            nodes[i].freezies.add(color);
         }
 
         public boolean isFrozen(int i) {
@@ -342,7 +346,7 @@ public class Main {
         }
 
         public boolean canColor(int i, int color) {
-            if (isFrozen(i) && color != nodes[i].color)
+            if (isFrozen(i) && !nodes[i].freezies.contains(color))
                 return false;
 
             return edges(i).stream().allMatch(dest -> getColor(dest) != color);
@@ -397,6 +401,7 @@ public class Main {
         public boolean frozen;
         public List<Integer> edges = new ArrayList<>();
         public List<Integer> islands = new ArrayList<>();
+        public Set<Integer> freezies = new HashSet<>();
 
         public Node() {
             this(-1);
@@ -414,6 +419,7 @@ public class Main {
             this.frozen = original.frozen;
             this.edges.addAll(original.edges);
             this.islands.addAll(original.islands);
+            this.freezies.addAll(original.freezies);
         }
 
         public int getMultipliedWeight() {
