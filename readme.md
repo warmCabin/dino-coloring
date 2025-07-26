@@ -52,5 +52,7 @@ The first line will contain a positive integer **N,** the number of nodes. The n
 
 The first line will contain a nonnegative integer **R,** the number of restrictions. The next R lines will contain restrictions of the following types:  
 
-* `F n c` - Freeze node n on color c. c can be a number 1 - C, or the name of the color. The main purpose of this is to describe regions that the pen can't reach, but it can also be used to try out ideas.
+* `F n c0 [c1...]` - Limit ("freeze") color choices for node n to $c_0$, $c_1$, ...  
+  $c_i$ can be a number 1 - C, or the name of the color. The main purpose of this is to describe regions that the pen
+  can't reach, but it can also be used to try out ideas.
 * `M a b` - Force nodes a and b to have the same color. I realized it's simpler to contract the nodes into one, so this is mostly unused. But I feel like leaving it in for now. **Make sure to run with -i simple**
